@@ -52,7 +52,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     # Model hyper-parameters
-    parser.add_argument('--c_dim', type=int, default=5)
+    parser.add_argument('--c_dim', type=int, default=4)
     parser.add_argument('--c2_dim', type=int, default=8)
     parser.add_argument('--celebA_crop_size', type=int, default=178)
     parser.add_argument('--rafd_crop_size', type=int, default=256)
@@ -69,9 +69,9 @@ if __name__ == '__main__':
     parser.add_argument('--d_train_repeat', type=int, default=5)
 
     # Training settings
-    parser.add_argument('--dataset', type=str, default='CelebA', choices=['CelebA', 'RaFD', 'Both'])
-    parser.add_argument('--num_epochs', type=int, default=20)
-    parser.add_argument('--num_epochs_decay', type=int, default=10)
+    parser.add_argument('--dataset', type=str, default='RaFD', choices=['CelebA', 'RaFD', 'Both'])
+    parser.add_argument('--num_epochs', type=int, default=200)
+    parser.add_argument('--num_epochs_decay', type=int, default=100)
     parser.add_argument('--num_iters', type=int, default=200000)
     parser.add_argument('--num_iters_decay', type=int, default=100000)
     parser.add_argument('--batch_size', type=int, default=16)
@@ -89,17 +89,17 @@ if __name__ == '__main__':
 
     # Path
     parser.add_argument('--celebA_image_path', type=str, default='./data/CelebA_nocrop/images')
-    parser.add_argument('--rafd_image_path', type=str, default='./data/RaFD/train')
+    parser.add_argument('--rafd_image_path', type=str, default='./data/KAIST/train')
     parser.add_argument('--metadata_path', type=str, default='./data/list_attr_celeba.txt')
-    parser.add_argument('--log_path', type=str, default='./stargan/logs')
-    parser.add_argument('--model_save_path', type=str, default='./stargan/models')
-    parser.add_argument('--sample_path', type=str, default='./stargan/samples')
+    parser.add_argument('--log_path', type=str, default='./stargan_KAIST/logs')
+    parser.add_argument('--model_save_path', type=str, default='./stargan_KAIST/models')
+    parser.add_argument('--sample_path', type=str, default='./stargan_KAIST/samples')
     parser.add_argument('--result_path', type=str, default='./stargan/results')
 
     # Step size
     parser.add_argument('--log_step', type=int, default=10)
-    parser.add_argument('--sample_step', type=int, default=500)
-    parser.add_argument('--model_save_step', type=int, default=1000)
+    parser.add_argument('--sample_step', type=int, default=1200)
+    parser.add_argument('--model_save_step', type=int, default=1200)
 
     config = parser.parse_args()
     print(config)
