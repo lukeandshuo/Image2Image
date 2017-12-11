@@ -6,7 +6,8 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 from torchvision.datasets import ImageFolder
 from PIL import Image
-
+from torch import functional as F
+import PIL
 
 class CelebDataset(Dataset):
     def __init__(self, image_path, metadata_path, transform, mode):
@@ -83,6 +84,7 @@ def get_loader(image_path, metadata_path, crop_size, image_size, batch_size, dat
 
     if mode == 'train':
         transform = transforms.Compose([
+            transforms.Grayscale(1),
             transforms.CenterCrop(crop_size),
             transforms.Scale(image_size),
             transforms.RandomHorizontalFlip(),
@@ -90,8 +92,8 @@ def get_loader(image_path, metadata_path, crop_size, image_size, batch_size, dat
             transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
     else:
         transform = transforms.Compose([
-            transforms.CenterCrop(crop_size),
-            transforms.Scale(image_size),
+            # transforms.CenterCrop(crop_size),
+            # transforms.Scale(image_size),
             transforms.ToTensor(),
             transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
 

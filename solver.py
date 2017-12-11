@@ -7,12 +7,12 @@ import time
 import datetime
 from torch.autograd import grad
 from torch.autograd import Variable
-from torchvision.utils import save_image
+from torchvision.utils import save_image,make_grid
 from torchvision import transforms
 from model import Generator
 from model import Discriminator
 from PIL import Image
-
+import matplotlib.pyplot as plt
 
 class Solver(object):
 
@@ -195,6 +195,25 @@ class Solver(object):
                 fixed_c_list.append(self.to_var(fixed_c, volatile=True))
         return fixed_c_list
 
+
+
+    def show_image(self,tensor, nrow=8, padding=2,
+                   normalize=False, range=None, scale_each=False, pad_value=0):
+        """Save a given Tensor into an image file.
+
+        Args:
+            tensor (Tensor or list): Image to be saved. If given a mini-batch tensor,
+                saves the tensor as a grid of images by calling ``make_grid``.
+            **kwargs: Other arguments are documented in ``make_grid``.
+        """
+        from PIL import Image
+        tensor = tensor.cpu()
+        grid = make_grid(tensor, nrow=nrow, padding=padding, pad_value=pad_value,
+                         normalize=normalize, range=range, scale_each=scale_each)
+        ndarr = grid.mul(255).clamp(0, 255).byte().permute(1, 2, 0).numpy()
+        im = Image.fromarray(ndarr)
+        im.show()
+
     def train(self):
         """Train StarGAN within a single dataset."""
 
@@ -271,6 +290,7 @@ class Solver(object):
                     d_loss_cls = F.binary_cross_entropy_with_logits(
                         out_cls, real_label, size_average=False) / real_x.size(0)
                 else:
+                    # print(real_label.data)
                     d_loss_cls = F.cross_entropy(out_cls, real_label)
 
                 # Compute classification accuracy of the discriminator
@@ -673,21 +693,43 @@ class Solver(object):
             data_loader = self.rafd_loader
 
         for i, (real_x, org_c) in enumerate(data_loader):
+
+            # print(org_c.numpy())
+            # if org_c.numpy()[0] != 2:
+            #     continue
             real_x = self.to_var(real_x, volatile=True)
 
-            if self.dataset == 'CelebA':
-                target_c_list = self.make_celeb_labels(org_c)
-            else:
-                target_c_list = []
-                for j in range(self.c_dim):
-                    target_c = self.one_hot(torch.ones(real_x.size(0)) * j, self.c_dim)
-                    target_c_list.append(self.to_var(target_c, volatile=True))
+            ### Show Original
+            # self.show_image(self.denorm(real_x.data),nrow=1,padding=0)
 
-            # Start translations
-            fake_image_list = [real_x]
-            for target_c in target_c_list:
-                fake_image_list.append(self.G(real_x, target_c))
-            fake_images = torch.cat(fake_image_list, dim=3)
+            ############# transform a list ################
+            # if self.dataset == 'CelebA':
+            #     target_c_list = self.make_celeb_labels(org_c)
+            # else:
+            #     target_c_list = []
+            #     for j in range(self.c_dim):
+            #         target_c = self.one_hot(torch.ones(real_x.size(0)) * j, self.c_dim)
+            #         target_c_list.append(self.to_var(target_c, volatile=True))
+            #
+            # # Start translations
+            # fake_image_list = [real_x]
+            # for target_c in target_c_list:
+            #     fake_image_list.append(self.G(real_x, target_c))
+            # fake_images = torch.cat(fake_image_list, dim=3)
+
+            ################## transform one image #########
+
+            target_c = self.one_hot(torch.ones(real_x.size(0))*1,self.c_dim)
+            target_c = self.to_var(target_c,volatile=True)
+            start = time.clock()
+            fake_images = self.G(real_x,target_c)
+            end = time.clock()
+            print("one image time:",end-start)
+            ################# show result ##################
+
+            # self.show_image(self.denorm(fake_images.data),nrow=1,padding=0)
+
+
             save_path = os.path.join(self.result_path, '{}_fake.png'.format(i+1))
             save_image(self.denorm(fake_images.data), save_path, nrow=1, padding=0)
             print('Translated test images and saved into "{}"..!'.format(save_path))
@@ -731,3 +773,4 @@ class Solver(object):
             save_path = os.path.join(self.result_path, '{}_fake.png'.format(i+1))
             save_image(self.denorm(fake_images.data), save_path, nrow=1, padding=0)
             print('Translated test images and saved into "{}"..!'.format(save_path))
+
