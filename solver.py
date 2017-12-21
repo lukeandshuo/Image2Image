@@ -48,8 +48,18 @@ class Solver(object):
         self.num_iters_decay = config.num_iters_decay
         self.batch_size = config.batch_size
         self.use_tensorboard = config.use_tensorboard
-        self.pretrained_model = config.pretrained_model
-
+        self.pretrained_model = None
+        if config.resume:
+            if config.pretrained_model:
+                self.pretrained_model = config.pretrained_model
+            else:
+                iter_path = os.path.join(config.model_save_path, 'iter.txt')
+                try:
+                    start_epoch, epoch_iter = np.loadtxt(iter_path, delimiter=',', dtype=int)
+                except:
+                    start_epoch, epoch_iter = 0, 0
+                print('Resuming from epoch %d at iteration %d' % (start_epoch, epoch_iter))
+                self.pretrained_model = str(start_epoch)+"_"+str(epoch_iter)
         # Test settings
         self.test_model = config.test_model
 
@@ -62,7 +72,7 @@ class Solver(object):
         # Step size
         self.log_step = config.log_step
         self.sample_step = config.sample_step
-        self.model_save_step = config.model_save_step
+        self.model_save_epochs = config.model_save_epochs
 
         # Build tensorboard if use
         self.build_model()
@@ -253,15 +263,17 @@ class Solver(object):
 
         # Start with trained model if exists
         if self.pretrained_model:
-            start = int(self.pretrained_model.split('_')[0])
+            start_e,start_i = [int(x) for x in self.pretrained_model.split('_')]
         else:
-            start = 0
+            start_e,start_i = 0,0
 
         # Start training
         start_time = time.time()
-        for e in range(start, self.num_epochs):
-            for i, (real_x, real_label) in enumerate(self.data_loader):
-                
+        for e in range(start_e, self.num_epochs):
+            if e != start_e:
+                start_i = 0
+            for i, (real_x, real_label) in enumerate(self.data_loader,start=start_i):
+                global_i = e*len(self.data_loader)+i
                 # Generat fake labels randomly (target domain labels)
                 rand_idx = torch.randperm(real_label.size(0))
                 fake_label = real_label[rand_idx]
@@ -345,7 +357,7 @@ class Solver(object):
                 loss['D/loss_gp'] = d_loss_gp.data[0]
 
                 # ================== Train G ================== #
-                if (i+1) % self.d_train_repeat == 0:
+                if (global_i+1) % self.d_train_repeat == 0:
 
                     # Original-to-target and target-to-original domain
                     fake_x = self.G(real_x, fake_c)
@@ -374,7 +386,7 @@ class Solver(object):
                     loss['G/loss_cls'] = g_loss_cls.data[0]
 
                 # Print out log info
-                if (i+1) % self.log_step == 0:
+                if (global_i+1) % self.log_step == 0:
                     elapsed = time.time() - start_time
                     elapsed = str(datetime.timedelta(seconds=elapsed))
 
@@ -390,7 +402,7 @@ class Solver(object):
                             self.logger.scalar_summary(tag, value, e * iters_per_epoch + i + 1)
 
                 # Translate fixed images for debugging
-                if (i+1) % self.sample_step == 0:
+                if (global_i+1) % self.sample_step == 0:
                     fake_image_list = [fixed_x]
                     for fixed_c in fixed_c_list:
                         fake_image_list.append(self.G(fixed_x, fixed_c))
@@ -400,11 +412,14 @@ class Solver(object):
                     print('Translated images and saved into {}..!'.format(self.sample_path))
 
                 # Save model checkpoints
-                if (i+1) % self.model_save_step == 0:
+                if e % self.model_save_epochs == 0 and i+1 == 100:
                     torch.save(self.G.state_dict(),
-                        os.path.join(self.model_save_path, '{}_{}_G.pth'.format(e+1, i+1)))
+                        os.path.join(self.model_save_path, '{}_{}_G.pth'.format(e, i)))
                     torch.save(self.D.state_dict(),
-                        os.path.join(self.model_save_path, '{}_{}_D.pth'.format(e+1, i+1)))
+                        os.path.join(self.model_save_path, '{}_{}_D.pth'.format(e, i)))
+
+                    print('saving the latest model (epoch %d, total_steps %d)' % (e, i))
+                    np.savetxt(os.path.join(self.model_save_path, 'iter.txt'), (e, i), delimiter=',', fmt='%d')
 
             # Decay learning rate
             if (e+1) > (self.num_epochs - self.num_epochs_decay):
@@ -666,7 +681,7 @@ class Solver(object):
                     os.path.join(self.sample_path, '{}_fake.png'.format(i+1)), nrow=1, padding=0)
 
             # Save model checkpoints
-            if (i+1) % self.model_save_step == 0:
+            if (i+1) % self.model_save_epochs == 0:
                 torch.save(self.G.state_dict(),
                     os.path.join(self.model_save_path, '{}_G.pth'.format(i+1)))
                 torch.save(self.D.state_dict(),

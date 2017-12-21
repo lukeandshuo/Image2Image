@@ -58,8 +58,8 @@ if __name__ == '__main__':
     parser.add_argument('--c_dim', type=int, default=3)
     parser.add_argument('--c2_dim', type=int, default=8)
     parser.add_argument('--celebA_crop_size', type=int, default=178)
-    parser.add_argument('--rafd_crop_size', type=int, default=256)
-    parser.add_argument('--image_size', type=int, default=128)
+    parser.add_argument('--rafd_crop_size', type=int, default=384)
+    parser.add_argument('--image_size', type=int, default=512)
     parser.add_argument('--g_conv_dim', type=int, default=64)
     parser.add_argument('--d_conv_dim', type=int, default=64)
     parser.add_argument('--g_repeat_num', type=int, default=6)
@@ -77,18 +77,19 @@ if __name__ == '__main__':
     parser.add_argument('--num_epochs_decay', type=int, default=100)
     parser.add_argument('--num_iters', type=int, default=200000)
     parser.add_argument('--num_iters_decay', type=int, default=100000)
-    parser.add_argument('--batch_size', type=int, default=16)
+    parser.add_argument('--batch_size', type=int, default=2)
     parser.add_argument('--num_workers', type=int, default=1)
     parser.add_argument('--beta1', type=float, default=0.5)
     parser.add_argument('--beta2', type=float, default=0.999)
-    parser.add_argument('--pretrained_model', type=str, default=None)
+    parser.add_argument('--resume', type=str2bool, default=True,help="continue training from a checkpoint(default is the latest)")
+    parser.add_argument('--pretrained_model', type=str, default=None, help="specific a checkpoint")
 
     # Test settings
     parser.add_argument('--test_model', type=str, default='200_600')
 
     # Misc
     parser.add_argument('--mode', type=str, default='train', choices=['train', 'test'])
-    parser.add_argument('--use_tensorboard', type=str2bool, default=False)
+    parser.add_argument('--use_tensorboard', type=str2bool, default=True)
 
     # Path
     parser.add_argument('--celebA_image_path', type=str, default='./data/CelebA_nocrop/images')
@@ -102,7 +103,7 @@ if __name__ == '__main__':
     # Step size
     parser.add_argument('--log_step', type=int, default=10)
     parser.add_argument('--sample_step', type=int, default=300)
-    parser.add_argument('--model_save_step', type=int, default=1465)
+    parser.add_argument('--model_save_epochs', type=int, default=1)
 
     config = parser.parse_args()
     print(config)

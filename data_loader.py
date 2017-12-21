@@ -84,7 +84,7 @@ def get_loader(image_path, metadata_path, crop_size, image_size, batch_size, dat
 
     if mode == 'train':
         transform = transforms.Compose([
-            transforms.Grayscale(1),
+            # transforms.Grayscale(1),
             transforms.CenterCrop(crop_size),
             transforms.Scale(image_size),
             transforms.RandomHorizontalFlip(),
