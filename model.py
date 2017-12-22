@@ -21,7 +21,7 @@ class ResidualBlock(nn.Module):
 
 class Generator(nn.Module):
     """Generator. Encoder-Decoder Architecture."""
-    def __init__(self, conv_dim=64, c_dim=5, repeat_num=6):
+    def __init__(self, conv_dim=64, c_dim=5, repeat_num=9):
         super(Generator, self).__init__()
 
         layers = []
@@ -31,8 +31,8 @@ class Generator(nn.Module):
 
         # Down-Sampling
         curr_dim = conv_dim
-        for i in range(2):
-            layers.append(nn.Conv2d(curr_dim, curr_dim*2, kernel_size=4, stride=2, padding=1, bias=False))
+        for i in range(4):
+            layers.append(nn.Conv2d(curr_dim, curr_dim*2, kernel_size=3, stride=2, padding=1, bias=False))
             layers.append(nn.InstanceNorm2d(curr_dim*2, affine=True))
             layers.append(nn.ReLU(inplace=True))
             curr_dim = curr_dim * 2
@@ -42,8 +42,8 @@ class Generator(nn.Module):
             layers.append(ResidualBlock(dim_in=curr_dim, dim_out=curr_dim))
 
         # Up-Sampling
-        for i in range(2):
-            layers.append(nn.ConvTranspose2d(curr_dim, curr_dim//2, kernel_size=4, stride=2, padding=1, bias=False))
+        for i in range(4):
+            layers.append(nn.ConvTranspose2d(curr_dim, curr_dim//2, kernel_size=3, stride=2, padding=1, bias=False, output_padding=1))
             layers.append(nn.InstanceNorm2d(curr_dim//2, affine=True))
             layers.append(nn.ReLU(inplace=True))
             curr_dim = curr_dim // 2
@@ -62,7 +62,7 @@ class Generator(nn.Module):
 
 class Discriminator(nn.Module):
     """Discriminator. PatchGAN."""
-    def __init__(self, image_size=128, conv_dim=64, c_dim=5, repeat_num=6):
+    def __init__(self, image_size=128, conv_dim=64, c_dim=5, repeat_num=9):
         super(Discriminator, self).__init__()
 
         layers = []
@@ -82,6 +82,6 @@ class Discriminator(nn.Module):
 
     def forward(self, x):
         h = self.main(x)
-        out_real = self.conv1(h)
-        out_aux = self.conv2(h)
-        return out_real.squeeze(), out_aux.squeeze()
+        out_real = self.conv1(h).squeeze(dim=1)
+        out_aux = self.conv2(h).squeeze(dim=2).squeeze(dim=2)
+        return out_real, out_aux

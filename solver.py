@@ -275,8 +275,13 @@ class Solver(object):
             for i, (real_x, real_label) in enumerate(self.data_loader,start=start_i):
                 global_i = e*len(self.data_loader)+i
                 # Generat fake labels randomly (target domain labels)
-                rand_idx = torch.randperm(real_label.size(0))
-                fake_label = real_label[rand_idx]
+
+                ##original version based on 16 batch size #####
+                # rand_idx = torch.randperm(real_label.size(0))
+                # fake_label = real_label[rand_idx]
+                ### for the version of 1 batch size ###
+                fake_label = torch.LongTensor(real_label.size(0))
+                fake_label.random_(0,self.c_dim)
 
                 if self.dataset == 'CelebA':
                     real_c = real_label.clone()
@@ -312,7 +317,7 @@ class Solver(object):
                     if self.dataset == 'CelebA':
                         print('Classification Acc (Black/Blond/Brown/Gender/Aged): ', end='')
                     else:
-                        print('Classification Acc (8 emotional expressions): ', end='')
+                        print('Classification Acc: ', end='')
                     print(log)
 
                 # Compute loss with fake images
@@ -412,7 +417,7 @@ class Solver(object):
                     print('Translated images and saved into {}..!'.format(self.sample_path))
 
                 # Save model checkpoints
-                if e % self.model_save_epochs == 0 and i+1 == 100:
+                if e % self.model_save_epochs == 0 and i+1 == len(self.data_loader):
                     torch.save(self.G.state_dict(),
                         os.path.join(self.model_save_path, '{}_{}_G.pth'.format(e, i)))
                     torch.save(self.D.state_dict(),
